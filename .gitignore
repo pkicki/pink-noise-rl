@@ -1,0 +1,5 @@
+experiments/logs
+experiments/runs
+experiments/wandb
+experiments/models
+*/__pycache__

@@ -53,13 +53,13 @@ def experiment(
     action_dim = env.action_space.shape[-1]
 
     #group_name = f"{config['env_name']}_{config['noise_type']}_ls{config['learning_starts']}"
-    group_name = f"{config['alg']}_{config['noise_type']}_ls{config['learning_starts']}"
+    group_name = f"{config['noise_type']}"
     if config['noise_type'] == "lowpass":
         group_name = group_name + f"_fc{config['cutoff']}_o{config['order']}"
     run_name = group_name + f"_seed{seed}"
 
     run = wandb.init(
-        project="LPRL_" + env_name,
+        project="LPRL_" + alg + "_" + env_name,
         group=group_name,
         name=run_name,
         config=config,

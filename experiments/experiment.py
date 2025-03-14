@@ -16,7 +16,9 @@ from experiment_launcher import single_experiment, run_experiment
 
 @single_experiment
 def experiment(
-    noise_type: str = "pink",
+    #alg: str = "sac",
+    alg: str = "td3",
+    noise_type: str = "lowpass",
     env_name: str = "HalfCheetah-v4",
     learning_starts: int = 10_000,
     total_timesteps: int = 1_000_000,

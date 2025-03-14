@@ -1,7 +1,9 @@
 """Comparing pink action noise with the default noise on SAC."""
 
-from typing import Literal
 import gymnasium as gym
+from dm_control import suite
+from gymnasium.wrappers import FlattenObservation
+import shimmy
 import numpy as np
 import torch
 from pink.lpnrl import LowPassNoiseDist
@@ -14,7 +16,7 @@ from experiment_launcher import single_experiment, run_experiment
 
 @single_experiment
 def experiment(
-    noise_type: Literal["pink", "lowpass", "normal"] = "pink",
+    noise_type: str = "pink",
     env_name: str = "HalfCheetah-v4",
     learning_starts: int = 10_000,
     total_timesteps: int = 1_000_000,
@@ -24,7 +26,7 @@ def experiment(
     debug: bool = True,
     #debug: bool = False,
     results_dir: str = "results",
-):
+    ):
     # Reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -39,8 +41,13 @@ def experiment(
     )
 
     # Initialize environment
-    env = gym.make(config["env_name"])
-    seq_len = env._max_episode_steps
+    try:
+        env = gym.make(config["env_name"])
+        seq_len = env._max_episode_steps
+    except:
+        env = suite.load(*config["env_name"].split("-"))
+        seq_len = int(env._step_limit)
+        env = FlattenObservation(shimmy.DmControlCompatibilityV0(env))
     env = Monitor(env)
     action_dim = env.action_space.shape[-1]
 
@@ -54,6 +61,7 @@ def experiment(
         group=group_name,
         name=run_name,
         config=config,
+        sync_tensorboard=True,
         save_code=True,  # optional
         mode="online" if not debug else "disabled",
     )

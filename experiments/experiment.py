@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from pink.lpnrl import LowPassNoiseDist
 from pink.sb3 import PinkNoiseDist
-from stable_baselines3 import SAC
+from stable_baselines3 import SAC, TD3
 from stable_baselines3.common.monitor import Monitor
 import wandb
 from wandb.integration.sb3 import WandbCallback
@@ -33,6 +33,7 @@ def experiment(
     rng = np.random.default_rng(seed)
 
     config = dict(
+        alg=alg,
         noise_type=noise_type,
         env_name=env_name,
         learning_starts=learning_starts,
@@ -51,7 +52,8 @@ def experiment(
     env = Monitor(env)
     action_dim = env.action_space.shape[-1]
 
-    group_name = f"{config['env_name']}_{config['noise_type']}_ls{config['learning_starts']}"
+    #group_name = f"{config['env_name']}_{config['noise_type']}_ls{config['learning_starts']}"
+    group_name = f"{config['alg']}_{config['noise_type']}_ls{config['learning_starts']}"
     if config['noise_type'] == "lowpass":
         group_name = group_name + f"_fc{config['cutoff']}_o{config['order']}"
     run_name = group_name + f"_seed{seed}"
@@ -67,7 +69,10 @@ def experiment(
     )
 
     # Initialize agents
-    model = SAC("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
+    if alg == "sac":
+        model = SAC("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
+    elif alg == "td3":
+        model = TD3("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
 
     if config["noise_type"] == "pink":
         model.actor.action_dist = PinkNoiseDist(seq_len, action_dim, rng=rng)

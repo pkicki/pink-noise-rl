@@ -66,7 +66,7 @@ def experiment(
         name=run_name,
         config=config,
         sync_tensorboard=True,
-        save_code=True,  # optional
+        #save_code=True,  # optional
         mode="online" if not debug else "disabled",
     )
 
@@ -95,8 +95,8 @@ def experiment(
     # Train agents
     model.learn(total_timesteps=total_timesteps, progress_bar=True,
                 callback=WandbCallback(
-                    model_save_freq=int(0.1 * total_timesteps),
-                    model_save_path=f"models/{run.id}",
+                    #model_save_freq=int(0.1 * total_timesteps),
+                    #model_save_path=f"models/{run.id}",
                     verbose=2,),
                 )
 

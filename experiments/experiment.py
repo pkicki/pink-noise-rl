@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from pink.lpnrl import LowPassNoiseDist
 from pink.sb3 import PinkNoiseDist
-from stable_baselines3 import SAC, TD3
+from stable_baselines3 import A2C, SAC, TD3
 from stable_baselines3.common.monitor import Monitor
 import wandb
 from wandb.integration.sb3 import WandbCallback
@@ -75,13 +75,22 @@ def experiment(
         model = SAC("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
     elif alg == "td3":
         model = TD3("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
+    elif alg == "a2c":
+        model = A2C("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}")
 
     if config["noise_type"] == "pink":
-        model.actor.action_dist = PinkNoiseDist(seq_len, action_dim, rng=rng)
+        if hasattr(model, "actor"):
+            model.actor.action_dist = PinkNoiseDist(seq_len, action_dim, rng=rng)
+        else:
+            model.policy.action_dist = PinkNoiseDist(seq_len, action_dim, rng)
     elif config["noise_type"] == "lowpass":
         dt = env.unwrapped.dt
-        model.actor.action_dist = LowPassNoiseDist(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt,
-                                                   seq_len=seq_len, action_dim=action_dim, rng=rng)
+        if hasattr(model, "actor"):
+            model.actor.action_dist = LowPassNoiseDist(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt,
+                                                    seq_len=seq_len, action_dim=action_dim, rng=rng)
+        else:
+            model.policy.action_dist = LowPassNoiseDist(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt,
+                                                    seq_len=seq_len, action_dim=action_dim, rng=rng)
 
     # Train agents
     model.learn(total_timesteps=total_timesteps, progress_bar=True,

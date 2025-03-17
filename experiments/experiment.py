@@ -13,6 +13,8 @@ from stable_baselines3.common.monitor import Monitor
 import wandb
 from wandb.integration.sb3 import WandbCallback
 from experiment_launcher import single_experiment, run_experiment
+import gymnasium_robotics
+gym.register_envs(gymnasium_robotics)
 
 @single_experiment
 def experiment(

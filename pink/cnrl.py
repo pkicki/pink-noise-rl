@@ -91,6 +91,9 @@ class ColoredNoiseProcess():
         ret = self.scale * np.concatenate(ret, axis=-1)
         return ret if n > 1 else ret[..., 0]
 
+    def __call__(self):
+        return self.sample()
+
 
 class PinkNoiseProcess(ColoredNoiseProcess):
     """Infinite pink noise process.

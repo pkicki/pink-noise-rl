@@ -6,9 +6,11 @@ from gymnasium.wrappers import FlattenObservation
 import shimmy
 import numpy as np
 import torch
-from pink.lpnrl import LowPassNoiseDist
+from pink.cnrl import PinkNoiseProcess
+from pink.lpnrl import LowPassNoiseDist, LowPassNoiseProcess
 from pink.sb3 import PinkNoiseDist
 from stable_baselines3 import A2C, SAC, TD3
+from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.monitor import Monitor
 import wandb
 from wandb.integration.sb3 import WandbCallback
@@ -76,7 +78,15 @@ def experiment(
     if alg == "sac":
         model = SAC("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
     elif alg == "td3":
-        model = TD3("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"])
+        scale = 0.1
+        noise = NormalActionNoise(mean=np.zeros(action_dim), sigma=scale * np.ones(action_dim))
+        if config["noise_type"] == "pink":
+            noise = PinkNoiseProcess(scale=scale, size=(action_dim, seq_len), rng=rng)
+        elif config["noise_type"] == "lowpass":
+            noise = LowPassNoiseProcess(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt, scale=scale,
+                                        seq_len=seq_len, size=(action_dim, seq_len), rng=rng)
+        model = TD3("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"],
+                    action_noise=noise)
     elif alg == "a2c":
         model = A2C("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}")
 

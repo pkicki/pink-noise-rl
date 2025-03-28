@@ -120,6 +120,9 @@ class LowPassNoiseProcess():
         ret = self.scale * np.concatenate(ret, axis=-1)
         return ret if n > 1 else ret[..., 0]
 
+    def __call__(self):
+        return self.sample()
+
 
 class LowPassNoiseDist(SquashedDiagGaussianDistribution):
     def __init__(self, cutoff, order, sampling_freq, seq_len, action_dim=None, rng=None, epsilon=1e-6):

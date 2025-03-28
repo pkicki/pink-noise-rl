@@ -73,6 +73,7 @@ def experiment(
         #save_code=True,  # optional
         mode="online" if not debug else "disabled",
     )
+    dt = env.unwrapped.dt
 
     # Initialize agents
     if alg == "sac":
@@ -96,7 +97,6 @@ def experiment(
         else:
             model.policy.action_dist = PinkNoiseDist(seq_len, action_dim, rng)
     elif config["noise_type"] == "lowpass":
-        dt = env.unwrapped.dt
         if hasattr(model, "actor"):
             model.actor.action_dist = LowPassNoiseDist(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt,
                                                     seq_len=seq_len, action_dim=action_dim, rng=rng)

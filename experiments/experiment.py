@@ -85,7 +85,7 @@ def experiment(
             noise = PinkNoiseProcess(scale=scale, size=(action_dim, seq_len), rng=rng)
         elif config["noise_type"] == "lowpass":
             noise = LowPassNoiseProcess(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt, scale=scale,
-                                        seq_len=seq_len, size=(action_dim, seq_len), rng=rng)
+                                        size=(action_dim, seq_len), rng=rng)
         model = TD3("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}", learning_starts=config["learning_starts"],
                     action_noise=noise)
     elif alg == "a2c":

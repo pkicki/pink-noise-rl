@@ -1,9 +1,10 @@
 import numpy as np
 
 from . import colorednoise as cn
+from stable_baselines3.common.noise import ActionNoise
 
 
-class ColoredNoiseProcess():
+class ColoredNoiseProcess(ActionNoise):
     """Infinite colored noise process.
 
     Implemented as a buffer: every `size[-1]` samples, a cut to a new time series starts. As this cut influences the
@@ -16,7 +17,7 @@ class ColoredNoiseProcess():
     reset()
         Reset the buffer with a new time series.
     """
-    def __init__(self, beta, size, scale=1, max_period=None, rng=None):
+    def __init__(self, beta, size, scale=1, max_period=None, rng=None, dtype=np.float32):
         """Infinite colored noise process.
 
         Implemented as a buffer: every `size[-1]` samples, a cut to a new time series starts. As this cut influences
@@ -45,6 +46,7 @@ class ColoredNoiseProcess():
             self.minimum_frequency = 1 / max_period
         self.scale = scale
         self.rng = rng
+        self.dtype = dtype
 
         # The last component of size is the time index
         try:
@@ -59,7 +61,7 @@ class ColoredNoiseProcess():
     def reset(self):
         """Reset the buffer with a new time series."""
         self.buffer = cn.powerlaw_psd_gaussian(
-                exponent=self.beta, size=self.size, fmin=self.minimum_frequency, rng=self.rng)
+                exponent=self.beta, size=self.size, fmin=self.minimum_frequency, rng=self.rng).astype(self.dtype)
         self.idx = 0
 
     def sample(self, T=1):

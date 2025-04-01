@@ -4,8 +4,9 @@ from pink.colorednoise import powerlaw_psd_gaussian
 from scipy.signal import butter, lfilter, periodogram
 
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, DiagGaussianDistribution
+from stable_baselines3.common.noise import ActionNoise
 
-class LowPassNoiseProcess():
+class LowPassNoiseProcess(ActionNoise):
     """Infinite low-pass noise process.
 
     Implemented as a buffer: every `size[-1]` samples, a cut to a new time series starts.
@@ -17,7 +18,7 @@ class LowPassNoiseProcess():
     reset()
         Reset the buffer with a new time series.
     """
-    def __init__(self, cutoff, order, sampling_freq, size, scale=1, rng=None):
+    def __init__(self, cutoff, order, sampling_freq, size, scale=1, rng=None, dtype=np.float32):
         """Infinite low-pass noise process.
 
         Implemented as a buffer: every `size[-1]` samples, a cut to a new time series starts. 
@@ -46,6 +47,7 @@ class LowPassNoiseProcess():
 
         self.scale = scale
         self.rng = rng if rng is not None else np.random.default_rng()
+        self.dtype = dtype
 
         # The last component of size is the time index
         try:
@@ -69,6 +71,7 @@ class LowPassNoiseProcess():
         self.buffer = lfilter(self.b, self.a, self.buffer)
         #self.buffer = self.buffer / np.std(self.buffer, axis=-1, keepdims=True)
         self.buffer = self.buffer / np.std(self.buffer, axis=-1).mean()
+        self.buffer = self.buffer.astype(self.dtype)
 
         #import matplotlib.pyplot as plt
         ## compute and plot periodograms for the buffers

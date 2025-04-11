@@ -6,9 +6,10 @@ from gymnasium.wrappers import FlattenObservation
 import shimmy
 import numpy as np
 import torch
-from pink.cnrl import PinkNoiseProcess
+from pink.cnrl import ColoredNoiseProcess
 from pink.lpnrl import LowPassNoiseDist, LowPassNoiseProcess
-from pink.sb3 import PinkNoiseDist
+#from pink.mpo import MPO
+from pink.sb3 import ColoredNoiseDist
 from stable_baselines3 import A2C, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.monitor import Monitor
@@ -28,6 +29,7 @@ def experiment(
     total_timesteps: int = 1_000_000,
     cutoff: float = 5.0,
     order: int = 1,
+    beta: float = 1.0,
     seed: int = 0,
     debug: bool = True,
     #debug: bool = False,
@@ -45,6 +47,7 @@ def experiment(
         learning_starts=learning_starts,
         cutoff=cutoff,
         order=order,
+        beta=beta,
     )
 
     # Initialize environment
@@ -62,6 +65,9 @@ def experiment(
     group_name = f"{config['noise_type']}"
     if config['noise_type'] == "lowpass":
         group_name = group_name + f"_fc{config['cutoff']}_o{config['order']}"
+    if config['noise_type'] == "colored":
+        group_name = group_name + f"_b{config['beta']}"
+
     run_name = group_name + f"_seed{seed}"
 
     run = wandb.init(
@@ -81,8 +87,8 @@ def experiment(
     elif alg == "td3":
         scale = 0.1
         noise = NormalActionNoise(mean=np.zeros(action_dim), sigma=scale * np.ones(action_dim))
-        if config["noise_type"] == "pink":
-            noise = PinkNoiseProcess(scale=scale, size=(action_dim, seq_len), rng=rng)
+        if config["noise_type"] == "colored":
+            noise = ColoredNoiseProcess(beta=beta, scale=scale, size=(action_dim, seq_len), rng=rng)
         elif config["noise_type"] == "lowpass":
             noise = LowPassNoiseProcess(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt, scale=scale,
                                         size=(action_dim, seq_len), rng=rng)
@@ -93,9 +99,9 @@ def experiment(
 
     if config["noise_type"] == "pink":
         if hasattr(model, "actor"):
-            model.actor.action_dist = PinkNoiseDist(seq_len, action_dim, rng=rng)
+            model.actor.action_dist = ColoredNoiseDist(beta, seq_len, action_dim, rng=rng)
         else:
-            model.policy.action_dist = PinkNoiseDist(seq_len, action_dim, rng)
+            model.policy.action_dist = ColoredNoiseDist(beta, seq_len, action_dim, rng)
     elif config["noise_type"] == "lowpass":
         if hasattr(model, "actor"):
             model.actor.action_dist = LowPassNoiseDist(cutoff=config["cutoff"], order=config["order"], sampling_freq=1./dt,

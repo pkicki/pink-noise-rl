@@ -97,7 +97,7 @@ def experiment(
     elif alg == "a2c":
         model = A2C("MlpPolicy", env, seed=seed, verbose=1, tensorboard_log=f"runs/{run.id}")
 
-    if config["noise_type"] == "pink":
+    if config["noise_type"] == "colored":
         if hasattr(model, "actor"):
             model.actor.action_dist = ColoredNoiseDist(beta, seq_len, action_dim, rng=rng)
         else:
